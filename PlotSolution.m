@@ -1,0 +1,66 @@
+function overview = PlotSolution(BestSol,model,state,filePath,mode)
+%PLOTSOLUTION Plot the optimized route or all-order reference overview.
+
+overview = [];
+if strcmp(mode,'all')
+    BestSol.Route = model.referenceRoute;
+    BestSol.Control = model.referenceControl;
+    state.position = model.depot;
+    state.activeIDs = 1:model.nOrders;
+end
+
+[~,detail] = Fitness(BestSol.Position,model,state);
+figure('Color','w');
+surf(model.X,model.Y,model.terrainZ, ...
+    'EdgeColor','none','FaceAlpha',0.65,'DisplayName','Terrain');
+hold on
+colormap parula
+axis equal
+grid on
+xlabel('X'); ylabel('Y'); zlabel('Z');
+
+for i = 1:length(model.obstacles)
+    obs = model.obstacles(i);
+    [X,Y,Z] = cylinder(obs.r,30);
+    X = X+obs.x;
+    Y = Y+obs.y;
+    Z = obs.zMin+Z*(obs.zMax-obs.zMin);
+    if i == 1
+        surf(X,Y,Z,'FaceColor',[0.75 0.25 0.25], ...
+            'FaceAlpha',0.55,'EdgeColor','none', ...
+            'DisplayName','Cylindrical obstacle');
+    else
+        surf(X,Y,Z,'FaceColor',[0.75 0.25 0.25], ...
+            'FaceAlpha',0.55,'EdgeColor','none', ...
+            'HandleVisibility','off');
+    end
+end
+
+plot3(detail.points(:,1),detail.points(:,2),detail.points(:,3), ...
+    'b-o','LineWidth',2,'MarkerSize',3,'MarkerFaceColor','w', ...
+    'DisplayName','UAV route');
+plot3(model.depot(1),model.depot(2),model.depot(3), ...
+    'ks','MarkerSize',10,'MarkerFaceColor','k','DisplayName','Depot');
+
+for i = 1:length(state.activeIDs)
+    id = state.activeIDs(i);
+    p = model.orders(id).xyz;
+    plot3(p(1),p(2),p(3),'ko','MarkerFaceColor','y', ...
+        'MarkerSize',6,'HandleVisibility','off');
+    text(p(1)+1,p(2)+1,p(3)+1,sprintf('C%d',id));
+end
+
+if strcmp(mode,'all')
+    points = reshape([model.orders.xyz],3,[])';
+    scatter3(points(:,1),points(:,2),points(:,3),50, ...
+        [0.95 0.75 0.1],'filled','DisplayName','Orders');
+    title(sprintf('All %d orders: reference overview',model.nOrders));
+    overview.route = BestSol.Route;
+    overview.points = detail.points;
+    overview.distance = detail.distance;
+else
+    title('Static 3-D UAV control-point route');
+end
+legend('Location','best');
+exportgraphics(gcf,filePath,'Resolution',150);
+end
