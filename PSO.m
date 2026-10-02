@@ -33,9 +33,11 @@ GlobalBest.Cost = inf;
 
 for i = 1:Particle_Number
     particle(i).Position = VarMin+rand(1,D).*(VarMax-VarMin);
-    route = state.activeIDs(randperm(N));
+    [~,order] = sort(particle(i).Position(1:N));
+    route = state.activeIDs(order);
     control = InitialControlPoints(route,model,state.position);
-    particle(i).Position(N+1:end) = control(:)';
+    particle(i).Position(N+1:end) = ...
+        reshape(permute(control,[3 2 1]),1,[]);
     particle(i).Velocity = Vmin+rand(1,D).*(Vmax-Vmin);
     [particle(i).Cost,particle(i).Detail] = ...
         Fitness(particle(i).Position,model,state);
@@ -73,5 +75,6 @@ BestSol = GlobalBest;
 N = model.nOrders;
 [~,order] = sort(BestSol.Position(1:N));
 BestSol.Route = state.activeIDs(order);
-BestSol.Control = reshape(BestSol.Position(N+1:end),[],K,3);
+controlVector = BestSol.Position(N+1:end);
+BestSol.Control = permute(reshape(controlVector,3,K,N+1),[3 2 1]);
 end

@@ -5,7 +5,8 @@ N = model.nOrders;
 routeKeys = position(1:N);
 [~,order] = sort(routeKeys);
 route = state.activeIDs(order);
-control = reshape(position(N+1:end),[],model.nControlPoints,3);
+controlVector = position(N+1:end);
+control = permute(reshape(controlVector,3,model.nControlPoints,N+1),[3 2 1]);
 paths = DecodeParticle(route,control,model,state.position);
 
 currentTime = state.time;
@@ -74,13 +75,13 @@ end
 function result = EvaluatePolyline(points,model)
 segments = diff(points,1,1);
 horizontal = vecnorm(segments(:,1:2),2,2);
-pitch = atan2d(abs(segments(:,3)),horizontal);
+pitch = atan2d(segments(:,3),horizontal);
 turn = zeros(max(0,size(segments,1)-1),1);
 for i = 1:length(turn)
     a = segments(i,1:2); b = segments(i+1,1:2);
     turn(i) = atan2d(abs(a(1)*b(2)-a(2)*b(1)),dot(a,b));
 end
-angleViolation = sum(max(0,pitch-model.maxClimbAngle)) ...
+angleViolation = sum(max(0,abs(pitch)-model.maxClimbAngle)) ...
     + sum(max(0,turn-model.maxTurnAngle));
 smoothness = sum((turn/model.maxTurnAngle).^2) ...
     + sum((diff(pitch)/model.maxClimbAngle).^2);

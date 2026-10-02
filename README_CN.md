@@ -90,4 +90,4 @@ results/all_orders_route_3D.png
 results/baseline_convergence.png
 ```
 
-当前版本是老师思路的第一版静态 baseline。后续先观察控制点维度增加后标准 PSO 的表现，再决定是否设计改进算法。
+当前版本是老师思路的第一版静态 baseline。初始化时先从粒子 q 解码订单路线，再按同一条路线生成控制点；XYZ 控制点在粒子中的展开顺序固定为 x,y,z 逐点排列；pitch 使用带正负号的角度计算，硬约束使用绝对值，平滑度使用 pitch 变化。后续先观察控制点维度增加后标准 PSO 的表现，再决定是否设计改进算法。
