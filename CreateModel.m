@@ -68,9 +68,23 @@ model.selectedCustomerIDs = customers(:,1)';
 %% Reference route only for generating time windows
 xy = reshape([orders.xy],2,[])';
 model.referenceRoute = NearestNeighborRoute(model.depotXY,xy);
-referenceControl = InitialControlPoints(model.referenceRoute,model,model.depot);
+K = model.nControlPoints;
+referenceControl = zeros(cfg.nOrders+1,K,3);
+referencePaths = cell(cfg.nOrders+1,1);
+current = model.depot;
+for i = 1:cfg.nOrders+1
+    if i <= cfg.nOrders
+        target = model.orders(model.referenceRoute(i)).xyz;
+    else
+        target = model.depot;
+    end
+    for k = 1:K
+        referenceControl(i,k,:) = current+k/(K+1)*(target-current);
+    end
+    referencePaths{i} = [current;squeeze(referenceControl(i,:,:));target];
+    current = target;
+end
 model.referenceControl = referenceControl;
-referencePaths = DecodeParticle(model.referenceRoute,referenceControl,model,model.depot);
 currentTime = 0;
 referenceStart = zeros(1,cfg.nOrders);
 for k = 1:cfg.nOrders
@@ -93,13 +107,16 @@ function data = ReadRC101(filePath)
 fid = fopen(filePath,'r');
 lines = textscan(fid,'%s','Delimiter','\n','Whitespace','');
 fclose(fid);
-data = zeros(0,7);
+data = zeros(length(lines{1}),7);
+count = 0;
 for i = 1:length(lines{1})
     values = sscanf(lines{1}{i},'%f');
     if length(values)>=7
-        data(end+1,:) = values(1:7)';
+        count = count+1;
+        data(count,:) = values(1:7)';
     end
 end
+data = data(1:count,:);
 end
 
 function obstacle = MakeObstacle(data,model)

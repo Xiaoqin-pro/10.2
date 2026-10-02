@@ -63,12 +63,10 @@ route = activeIDs(order);
 ## 文件结构
 
 ```text
-main.m                  静态20订单主程序
+main.m                  静态20订单实验主程序
 CreateModel.m           地形、障碍物、订单和时间窗
-PSO.m                   连续混合粒子 PSO
-Fitness.m               控制点折线和时间窗评价
-InitialControlPoints.m  生成控制点初始插值
-DecodeParticle.m        将粒子解码成航段折线
+PSO.m                   矩阵式连续混合粒子 PSO
+Fitness.m               粒子解码、控制点折线和时间窗评价
 PlotSolution.m          路线和全部订单绘图
 data/rc101.txt          RC101 二维客户数据
 results/                运行结果
@@ -90,4 +88,4 @@ results/all_orders_route_3D.png
 results/baseline_convergence.png
 ```
 
-当前版本是老师思路的第一版静态 baseline。初始化时先从粒子 q 解码订单路线，再按同一条路线生成控制点；XYZ 控制点在粒子中的展开顺序固定为 x,y,z 逐点排列；pitch 使用带正负号的角度计算，硬约束使用绝对值，平滑度使用 pitch 变化。后续先观察控制点维度增加后标准 PSO 的表现，再决定是否设计改进算法。
+当前版本是老师思路的第一版静态 baseline。代码采用实验型 MATLAB 风格：main.m 负责问题准备、算法调用和结果绘图；PSO.m 使用 pop、V、pbest、gbest 等矩阵变量；Fitness.m 集中完成粒子解码和路径评价。初始化时先从粒子 q 解码订单路线，再按同一条路线生成控制点；XYZ 控制点在粒子中的展开顺序固定为 x,y,z 逐点排列；pitch 使用带正负号的角度计算，硬约束使用绝对值，平滑度使用 pitch 变化。后续先观察控制点维度增加后标准 PSO 的表现，再决定是否设计改进算法。

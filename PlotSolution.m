@@ -1,15 +1,23 @@
-function overview = PlotSolution(BestSol,model,state,filePath,mode)
-%PLOTSOLUTION Plot the optimized route or all-order reference overview.
+function overview = PlotSolution(BestSol,model,filePath,mode)
+%PLOTSOLUTION Plot the optimized route or the reference overview.
 
 overview = [];
+N = model.nOrders;
+K = model.nControlPoints;
+
 if strcmp(mode,'all')
-    BestSol.Route = model.referenceRoute;
-    BestSol.Control = model.referenceControl;
-    state.position = model.depot;
-    state.activeIDs = 1:model.nOrders;
+    % Build a particle position for the reference route so Fitness uses it.
+    position = zeros(1,N+(N+1)*K*3);
+    position(model.referenceRoute) = (1:N)/(N+1);
+    position(N+1:end) = ...
+        reshape(permute(model.referenceControl,[3 2 1]),1,[]);
+    plotTitle = sprintf('All %d orders: reference overview',model.nOrders);
+else
+    position = BestSol.Position;
+    plotTitle = 'Static 3-D UAV control-point route';
 end
 
-[~,detail] = Fitness(BestSol.Position,model,state);
+[~,detail] = Fitness(position,model);
 figure('Color','w');
 surf(model.X,model.Y,model.terrainZ, ...
     'EdgeColor','none','FaceAlpha',0.65,'DisplayName','Terrain');
@@ -42,8 +50,8 @@ plot3(detail.points(:,1),detail.points(:,2),detail.points(:,3), ...
 plot3(model.depot(1),model.depot(2),model.depot(3), ...
     'ks','MarkerSize',10,'MarkerFaceColor','k','DisplayName','Depot');
 
-for i = 1:length(state.activeIDs)
-    id = state.activeIDs(i);
+for i = 1:length(model.activeIDs)
+    id = model.activeIDs(i);
     p = model.orders(id).xyz;
     plot3(p(1),p(2),p(3),'ko','MarkerFaceColor','y', ...
         'MarkerSize',6,'HandleVisibility','off');
@@ -54,13 +62,12 @@ if strcmp(mode,'all')
     points = reshape([model.orders.xyz],3,[])';
     scatter3(points(:,1),points(:,2),points(:,3),50, ...
         [0.95 0.75 0.1],'filled','DisplayName','Orders');
-    title(sprintf('All %d orders: reference overview',model.nOrders));
-    overview.route = BestSol.Route;
+    overview.route = detail.route;
     overview.points = detail.points;
     overview.distance = detail.distance;
-else
-    title('Static 3-D UAV control-point route');
 end
+
+title(plotTitle);
 legend('Location','best');
 exportgraphics(gcf,filePath,'Resolution',150);
 end
